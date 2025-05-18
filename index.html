@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Robux</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Rubik', sans-serif;
+      background: linear-gradient(to bottom right, #b3e5fc, #c8e6c9);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+      overflow-x: hidden;
+    }
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5em;
+      padding: 50px 20px;
+      max-width: 95%;
+      width: 100%;
+    }
+    .screen.active {
+      display: flex;
+    }
+    .ui-box {
+      background: radial-gradient(circle at center, rgba(60, 60, 60, 0.4) 0%, rgba(60, 60, 60, 0.25) 70%, rgba(60, 60, 60, 0.1) 100%);
+      padding: 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(14px);
+      width: 100%;
+      max-width: 650px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+    h1, h2 {
+      font-size: 2.5em;
+      margin: 0;
+    }
+    p {
+      font-size: 1.2em;
+      color: #1c1c1c;
+    }
+    button {
+      padding: 18px 36px;
+      font-size: 1.3em;
+      border: none;
+      border-radius: 14px;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #333;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.35);
+    }
+    .ad-box {
+      margin-top: 40px;
+      padding: 20px;
+      border: 2px dashed #aaa;
+      border-radius: 12px;
+      background-color: rgba(255, 255, 255, 0.15);
+      font-size: 1em;
+    }
+    .small-note {
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #444;
+    }
+    .robux-tracker {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(255,255,255,0.2);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+      backdrop-filter: blur(6px);
+    }
+    #infoButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(255,255,255,0.2);
+      border: none;
+      padding: 10px 16px;
+      font-size: 1em;
+      border-radius: 10px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+    #map {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 600px;
+      height: 300px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="robux-tracker">Robux Accrued: <span id="robuxCount">0.000</span></div>
+<button id="infoButton" onclick="showInfoScreen()">Show Info</button>
+
+<div id="homeScreen" class="screen active">
+  <div class="ui-box">
+    <h1>Get Robux for Watching Ads</h1>
+    <p>This site requires your location to serve personalized ads and verify eligibility.</p>
+    <button onclick="requestLocation()">Click Allow to Watch Ads</button>
+  </div>
+</div>
+
+<div id="adScreen" class="screen">
+  <div class="ui-box">
+    <h1>Ads Loading...</h1>
+    <div class="ad-box">
+      <p><strong>Ad Area:</strong> Ads not available right now.</p>
+    </div>
+    <p class="small-note">
+      Ad payouts: 1 Robux per 5 minutes. Caps at 100/day.<br>
+      +1 Robux per 5 minutes per level.<br>
+      Each level requires 500 minutes watched.<br>
+      Each level increases required watch time by 10 minutes.<br>
+    </p>
+  </div>
+</div>
+
+<div id="infoScreen" class="screen">
+  <div class="ui-box">
+    <h2>Location & Info</h2>
+    <p id="addressInfo">Fetching location...</p>
+    <p id="coordinatesInfo"></p>
+    <p id="ipInfo">Fetching IP address...</p>
+    <div id="map"></div>
+  </div>
+</div>
+
+<script>
+  let robux = 0;
+  const robuxDisplay = document.getElementById('robuxCount');
+  const robuxPerSecond = 1 / (5 * 60);
+
+  setInterval(() => {
+    robux += robuxPerSecond;
+    robuxDisplay.textContent = robux.toFixed(3);
+  }, 1000);
+
+  let coords = {};
+
+  function requestLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        coords = { lat, lon };
+
+        document.getElementById('homeScreen').classList.remove('active');
+        document.getElementById('adScreen').classList.add('active');
+
+        // Get IP address
+        fetch('https://api.ipify.org?format=json')
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById('ipInfo').textContent = 'Your IP Address: ' + data.ip;
+          });
+
+        // Get address
+        const apiKey = '181058dade424f02a9ab4fd9098de818';
+        try {
+          const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`);
+          const data = await res.json();
+          const address = data.results[0]?.formatted || 'Address not found';
+          document.getElementById('addressInfo').textContent = 'Your Approximate Address: ' + address;
+          document.getElementById('coordinatesInfo').textContent = `Coordinates: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+
+          document.getElementById('map').innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" 
+            src="https://www.google.com/maps?q=${lat},${lon}&z=15&output=embed" allowfullscreen></iframe>`;
+        } catch {
+          document.getElementById('addressInfo').textContent = 'Unable to fetch address.';
+        }
+
+      }, () => {
+        alert('You must allow location access for ads to show.');
+      });
+    } else {
+      alert('Geolocation is not supported by your browser.');
+    }
+  }
+
+  function showInfoScreen() {
+    document.getElementById('homeScreen').classList.remove('active');
+    document.getElementById('adScreen').classList.remove('active');
+    document.getElementById('infoScreen').classList.add('active');
+  }
+</script>
+
+</body>
+</html>
